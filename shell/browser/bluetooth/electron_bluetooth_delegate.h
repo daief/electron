@@ -9,10 +9,12 @@
 #include <string>
 #include <vector>
 
+#include "base/memory/weak_ptr.h"
 #include "base/observer_list.h"
 #include "base/scoped_observation.h"
 #include "content/public/browser/bluetooth_delegate.h"
 #include "content/public/browser/render_frame_host.h"
+#include "gin/arguments.h"
 #include "third_party/blink/public/mojom/bluetooth/web_bluetooth.mojom-forward.h"
 
 namespace blink {
@@ -91,6 +93,13 @@ class ElectronBluetoothDelegate : public content::BluetoothDelegate {
   void AddFramePermissionObserver(FramePermissionObserver* observer) override;
   void RemoveFramePermissionObserver(
       FramePermissionObserver* observer) override;
+
+ private:
+  void OnDevicePairPromptResponse(gin::Arguments* args);
+
+  PairPromptCallback pair_prompt_callback_;
+
+  base::WeakPtrFactory<ElectronBluetoothDelegate> weak_factory_{this};
 };
 
 }  // namespace electron

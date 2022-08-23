@@ -72,6 +72,7 @@ std::unique_ptr<content::BluetoothScanningPrompt>
 ElectronBluetoothDelegate::ShowBluetoothScanningPrompt(
     content::RenderFrameHost* frame,
     const content::BluetoothScanningPrompt::EventHandler& event_handler) {
+  LOG(INFO) << "In ElectronBluetoothDelegate::ShowBluetoothScanningPrompt";
   NOTIMPLEMENTED();
   return nullptr;
 }
@@ -79,6 +80,7 @@ ElectronBluetoothDelegate::ShowBluetoothScanningPrompt(
 WebBluetoothDeviceId ElectronBluetoothDelegate::GetWebBluetoothDeviceId(
     RenderFrameHost* frame,
     const std::string& device_address) {
+  LOG(INFO) << "In ElectronBluetoothDelegate::GetWebBluetoothDeviceId";
   NOTIMPLEMENTED();
   return WebBluetoothDeviceId::Create();
 }
@@ -86,6 +88,7 @@ WebBluetoothDeviceId ElectronBluetoothDelegate::GetWebBluetoothDeviceId(
 std::string ElectronBluetoothDelegate::GetDeviceAddress(
     RenderFrameHost* frame,
     const WebBluetoothDeviceId& device_id) {
+  LOG(INFO) << "In ElectronBluetoothDelegate::GetDeviceAddress";
   NOTIMPLEMENTED();
   return nullptr;
 }
@@ -93,6 +96,7 @@ std::string ElectronBluetoothDelegate::GetDeviceAddress(
 WebBluetoothDeviceId ElectronBluetoothDelegate::AddScannedDevice(
     RenderFrameHost* frame,
     const std::string& device_address) {
+  LOG(INFO) << "In ElectronBluetoothDelegate::AddScannedDevice";
   NOTIMPLEMENTED();
   return WebBluetoothDeviceId::Create();
 }
@@ -101,6 +105,7 @@ WebBluetoothDeviceId ElectronBluetoothDelegate::GrantServiceAccessPermission(
     RenderFrameHost* frame,
     const device::BluetoothDevice* device,
     const blink::mojom::WebBluetoothRequestDeviceOptions* options) {
+  LOG(INFO) << "In ElectronBluetoothDelegate::GrantServiceAccessPermission";
   NOTIMPLEMENTED();
   return WebBluetoothDeviceId::Create();
 }
@@ -108,6 +113,7 @@ WebBluetoothDeviceId ElectronBluetoothDelegate::GrantServiceAccessPermission(
 bool ElectronBluetoothDelegate::HasDevicePermission(
     RenderFrameHost* frame,
     const WebBluetoothDeviceId& device_id) {
+  LOG(INFO) << "In ElectronBluetoothDelegate::HasDevicePermission";
   NOTIMPLEMENTED();
   return true;
 }
@@ -115,6 +121,8 @@ bool ElectronBluetoothDelegate::HasDevicePermission(
 void ElectronBluetoothDelegate::RevokeDevicePermissionWebInitiated(
     RenderFrameHost* frame,
     const WebBluetoothDeviceId& device_id) {
+  LOG(INFO)
+      << "In ElectronBluetoothDelegate::RevokeDevicePermissionWebInitiated";
   NOTIMPLEMENTED();
 }
 
@@ -129,6 +137,8 @@ bool ElectronBluetoothDelegate::IsAllowedToAccessService(
 bool ElectronBluetoothDelegate::IsAllowedToAccessAtLeastOneService(
     RenderFrameHost* frame,
     const WebBluetoothDeviceId& device_id) {
+  LOG(INFO)
+      << "In ElectronBluetoothDelegate::IsAllowedToAccessAtLeastOneService";
   NOTIMPLEMENTED();
   return true;
 }
@@ -137,6 +147,8 @@ bool ElectronBluetoothDelegate::IsAllowedToAccessManufacturerData(
     RenderFrameHost* frame,
     const WebBluetoothDeviceId& device_id,
     uint16_t manufacturer_code) {
+  LOG(INFO)
+      << "In ElectronBluetoothDelegate::IsAllowedToAccessManufacturerData";
   NOTIMPLEMENTED();
   return true;
 }
@@ -155,6 +167,7 @@ std::vector<blink::mojom::WebBluetoothDevicePtr>
 ElectronBluetoothDelegate::GetPermittedDevices(
     content::RenderFrameHost* frame) {
   std::vector<blink::mojom::WebBluetoothDevicePtr> permitted_devices;
+  LOG(INFO) << "In ElectronBluetoothDelegate:::GetPermittedDevices";
   NOTIMPLEMENTED();
   return permitted_devices;
 }
@@ -165,12 +178,15 @@ void ElectronBluetoothDelegate::ShowDevicePairPrompt(
     PairPromptCallback callback,
     PairingKind pairing_kind,
     const absl::optional<std::u16string>& pin) {
+  LOG(INFO) << "In ElectronBluetoothDelegate::ShowDevicePairPrompt";
   pair_prompt_callback_ = std::move(callback);
 
   bool prevent_default = false;
 
   auto* web_contents = content::WebContents::FromRenderFrameHost(frame);
   if (web_contents) {
+    LOG(INFO) << "In ElectronBluetoothDelegate::ShowDevicePairPrompt, got web "
+                 "contents; now get session";
     api::Session* session =
         api::Session::FromBrowserContext(web_contents->GetBrowserContext());
     v8::Isolate* isolate = JavascriptEnvironment::GetIsolate();
@@ -183,7 +199,8 @@ void ElectronBluetoothDelegate::ShowDevicePairPrompt(
     if (pin.has_value()) {
       details.Set("pin", pin.value());
     }
-
+    LOG(INFO) << "In ElectronBluetoothDelegate::ShowDevicePairPrompt, emitting "
+                 "'bluetooth-pair-prompt'";
     prevent_default = session->Emit(
         "bluetooth-pair-prompt", details,
         base::AdaptCallbackForRepeating(base::BindOnce(
@@ -191,6 +208,8 @@ void ElectronBluetoothDelegate::ShowDevicePairPrompt(
             weak_factory_.GetWeakPtr())));
 
     if (!prevent_default) {
+      LOG(INFO) << "In ElectronBluetoothDelegate::ShowDevicePairPrompt, "
+                   "prevent_default is false so cancel the pair prompt";
       std::move(pair_prompt_callback_)
           .Run(BluetoothDelegate::PairPromptResult(
               BluetoothDelegate::PairPromptStatus::kCancelled));
@@ -201,7 +220,8 @@ void ElectronBluetoothDelegate::ShowDevicePairPrompt(
 void ElectronBluetoothDelegate::OnDevicePairPromptResponse(
     gin::Arguments* args) {
   BluetoothDelegate::PairPromptResult result;
-
+  LOG(INFO) << "In ElectronBluetoothDelegate::OnDevicePairPromptResponse(, "
+               "prevent_default is false so cancel the pair prompt";
   bool confirmed;
   std::u16string pin;
   if (args->GetNext(&confirmed) && confirmed) {

@@ -1,0 +1,134 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Kleinschmidt <jkleinsc@electronjs.org>
+Date: Tue, 23 Aug 2022 21:03:30 -0400
+Subject: chore: add debugging for bluetooth pairing
+
+Adds debug logs to figure out why device is failing with unknown error.
+
+diff --git a/device/bluetooth/bluetooth_pairing_winrt.cc b/device/bluetooth/bluetooth_pairing_winrt.cc
+index a643fea704b95ceda239be403ea13383e30728a7..ea94d6b0ace132db443162241c4a7351b6749a4c 100644
+--- a/device/bluetooth/bluetooth_pairing_winrt.cc
++++ b/device/bluetooth/bluetooth_pairing_winrt.cc
+@@ -143,6 +143,7 @@ void BluetoothPairingWinrt::StartPairing() {
+                           weak_ptr_factory_.GetWeakPtr()));
+ 
+   if (!pairing_requested_token_) {
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::StartPairing1";
+     PostTask(std::move(callback_),
+              BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+     return;
+@@ -154,6 +155,8 @@ void BluetoothPairingWinrt::StartPairing() {
+           DevicePairingKinds_ConfirmPinMatch,
+       &pair_op);
+   if (FAILED(hr)) {
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::StartPairing: DeviceInformationCustomPairing::PairAsync() failed: "
++             << logging::SystemErrorCodeToString(hr);
+     DVLOG(2) << "DeviceInformationCustomPairing::PairAsync() failed: "
+              << logging::SystemErrorCodeToString(hr);
+     PostTask(std::move(callback_),
+@@ -168,6 +171,8 @@ void BluetoothPairingWinrt::StartPairing() {
+   if (FAILED(hr)) {
+     DVLOG(2) << "PostAsyncResults failed: "
+              << logging::SystemErrorCodeToString(hr);
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::StartPairing: PostAsyncResults failed: "
++             << logging::SystemErrorCodeToString(hr);
+     PostTask(std::move(callback_),
+              BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+     return;
+@@ -181,6 +186,8 @@ bool BluetoothPairingWinrt::ExpectingPinCode() const {
+ 
+ void BluetoothPairingWinrt::OnSetPinCodeDeferralCompletion(HRESULT hr) {
+   if (FAILED(hr)) {
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::OnSetPinCodeDeferralCompletion: Completing Deferred Pairing Request failed: "
++             << logging::SystemErrorCodeToString(hr);
+     DVLOG(2) << "Completing Deferred Pairing Request failed: "
+              << logging::SystemErrorCodeToString(hr);
+     std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+@@ -189,6 +196,8 @@ void BluetoothPairingWinrt::OnSetPinCodeDeferralCompletion(HRESULT hr) {
+ 
+ void BluetoothPairingWinrt::OnConfirmPairingDeferralCompletion(HRESULT hr) {
+   if (FAILED(hr)) {
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::OnConfirmPairingDeferralCompletionn: Completing Deferred Pairing Request failed: "
++          << logging::SystemErrorCodeToString(hr);
+     DVLOG(2) << "Completing Deferred Pairing Request failed: "
+              << logging::SystemErrorCodeToString(hr);
+     std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+@@ -204,6 +213,8 @@ void BluetoothPairingWinrt::SetPinCode(base::StringPiece pin_code) {
+   DCHECK(pairing_requested_);
+   HRESULT hr = pairing_requested_->AcceptWithPin(pin_hstring.get());
+   if (FAILED(hr)) {
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::SetPinCode: Accepting Pairing Request With Pin failed: "
++          << logging::SystemErrorCodeToString(hr);
+     DVLOG(2) << "Accepting Pairing Request With Pin failed: "
+              << logging::SystemErrorCodeToString(hr);
+     std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+@@ -224,6 +235,8 @@ void BluetoothPairingWinrt::ConfirmPairing() {
+   DCHECK(pairing_requested_);
+   HRESULT hr = pairing_requested_->Accept();
+   if (FAILED(hr)) {
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::ConfirmPairing: Accepting Pairing Request in ConfirmPairing failed: "
++          << logging::SystemErrorCodeToString(hr);
+     DVLOG(2) << "Accepting Pairing Request in ConfirmPairing failed: "
+              << logging::SystemErrorCodeToString(hr);
+     std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+@@ -240,6 +253,8 @@ void BluetoothPairingWinrt::ConfirmPairing() {
+ 
+ void BluetoothPairingWinrt::OnRejectPairing(HRESULT hr) {
+   if (FAILED(hr)) {
++    LOG(INFO) << "ERROR_FAILED in luetoothPairingWinrt::OnRejectPairing(: Completing Deferred Pairing Request failed: "
++          << logging::SystemErrorCodeToString(hr);
+     DVLOG(2) << "Completing Deferred Pairing Request failed: "
+              << logging::SystemErrorCodeToString(hr);
+     std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+@@ -266,6 +281,8 @@ void BluetoothPairingWinrt::OnCancelPairing(HRESULT hr) {
+   // runs |callback_| and destroys this object before this method can be
+   // executed. However, if the deferral fails to complete, this will be run.
+   if (FAILED(hr)) {
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::OnCancelPairing: Completing Deferred Pairing Request failed: "
++          << logging::SystemErrorCodeToString(hr);
+     DVLOG(2) << "Completing Deferred Pairing Request failed: "
+              << logging::SystemErrorCodeToString(hr);
+     std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+@@ -303,6 +320,8 @@ void BluetoothPairingWinrt::OnPairingRequested(
+   DevicePairingKinds pairing_kind;
+   HRESULT hr = pairing_requested->get_PairingKind(&pairing_kind);
+   if (FAILED(hr)) {
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::OnPairingRequested: Getting Pairing Kind failed: "
++          << logging::SystemErrorCodeToString(hr);
+     DVLOG(2) << "Getting Pairing Kind failed: "
+              << logging::SystemErrorCodeToString(hr);
+     std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+@@ -313,6 +332,8 @@ void BluetoothPairingWinrt::OnPairingRequested(
+ 
+   hr = pairing_requested->GetDeferral(&pairing_deferral_);
+   if (FAILED(hr)) {
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::OnPairingRequested: Getting Pairing Deferral failed: "
++          << logging::SystemErrorCodeToString(hr);
+     DVLOG(2) << "Getting Pairing Deferral failed: "
+              << logging::SystemErrorCodeToString(hr);
+     std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+@@ -375,6 +396,8 @@ void BluetoothPairingWinrt::OnPair(
+   DevicePairingResultStatus status;
+   HRESULT hr = pairing_result->get_Status(&status);
+   if (FAILED(hr)) {
++    LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::OnPair: Getting Pairing Result Status failed: "
++      << logging::SystemErrorCodeToString(hr);
+     DVLOG(2) << "Getting Pairing Result Status failed: "
+              << logging::SystemErrorCodeToString(hr);
+     std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+@@ -411,6 +434,7 @@ void BluetoothPairingWinrt::OnPair(
+           BluetoothDevice::ConnectErrorCode::ERROR_AUTH_TIMEOUT);
+       return;
+     case DevicePairingResultStatus_Failed:
++      LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::OnPair because DevicePairingResultStatus_Failed";
+       std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+       return;
+     case DevicePairingResultStatus_OperationAlreadyInProgress:
+@@ -418,6 +442,7 @@ void BluetoothPairingWinrt::OnPair(
+           BluetoothDevice::ConnectErrorCode::ERROR_INPROGRESS);
+       return;
+     default:
++      LOG(INFO) << "ERROR_FAILED in BluetoothPairingWinrt::OnPair because default";
+       std::move(callback_).Run(BluetoothDevice::ConnectErrorCode::ERROR_FAILED);
+       return;
+   }

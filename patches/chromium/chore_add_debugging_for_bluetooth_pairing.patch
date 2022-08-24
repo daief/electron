@@ -6,7 +6,7 @@ Subject: chore: add debugging for bluetooth pairing
 Adds debug logs to figure out why device is failing with unknown error.
 
 diff --git a/device/bluetooth/bluetooth_pairing_winrt.cc b/device/bluetooth/bluetooth_pairing_winrt.cc
-index a643fea704b95ceda239be403ea13383e30728a7..94b9275875670fec9bb0b119d48eb4ac54c9ca78 100644
+index a643fea704b95ceda239be403ea13383e30728a7..b5efaf7700ee1f6a5bfd56c5ba26b4e3e21c9298 100644
 --- a/device/bluetooth/bluetooth_pairing_winrt.cc
 +++ b/device/bluetooth/bluetooth_pairing_winrt.cc
 @@ -77,7 +77,7 @@ HRESULT CompleteDeferral(
@@ -156,12 +156,14 @@ index a643fea704b95ceda239be403ea13383e30728a7..94b9275875670fec9bb0b119d48eb4ac
    DCHECK(pairing_deferral_);
    // There is no way to explicitly cancel an in-progress pairing as
    // DevicePairingRequestedEventArgs has no Cancel() method. Our approach is to
-@@ -298,22 +299,22 @@ void BluetoothPairingWinrt::OnPairingRequested(
+@@ -297,23 +298,23 @@ void BluetoothPairingWinrt::CancelPairing() {
+ void BluetoothPairingWinrt::OnPairingRequested(
      IDeviceInformationCustomPairing* custom_pairing,
      IDevicePairingRequestedEventArgs* pairing_requested) {
-   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+-  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 -  DVLOG(2) << "BluetoothPairingWinrt::OnPairingRequested()";
 +  LOG(INFO) << "BluetoothPairingWinrt::OnPairingRequested()";
++  //DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
  
    DevicePairingKinds pairing_kind;
    HRESULT hr = pairing_requested->get_PairingKind(&pairing_kind);
